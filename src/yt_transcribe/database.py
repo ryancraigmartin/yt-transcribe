@@ -22,7 +22,7 @@ from . import config
 def get_db_path() -> Path:
     """
     Get the database file path.
-    
+
     Returns:
         Path: Path to the SQLite database file
     """
@@ -33,10 +33,10 @@ def get_db_path() -> Path:
 def get_connection():
     """
     Context manager for database connections.
-    
+
     Yields:
         sqlite3.Connection: Database connection
-        
+
     TypeScript Context:
         Similar to:
         const withConnection = async (callback) => {
@@ -47,7 +47,7 @@ def get_connection():
                 await conn.close()
             }
         }
-        
+
     Python's context manager automatically handles cleanup:
         with get_connection() as conn:
             # use conn
@@ -64,23 +64,24 @@ def get_connection():
 def init_db() -> None:
     """
     Initialize the database schema.
-    
+
     Creates tables if they don't exist:
     - processed_videos: Tracks which videos have been transcribed
-    
+
     This is idempotent - safe to call multiple times.
-    
+
     TypeScript Context:
         Like running database migrations:
         await db.schema.createTableIfNotExists('processed_videos', ...)
     """
     config.ensure_config_dir()
-    
+
     with get_connection() as conn:
         cursor = conn.cursor()
-        
+
         # Create processed_videos table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS processed_videos (
                 video_id TEXT PRIMARY KEY,
                 playlist_id TEXT NOT NULL,
@@ -92,27 +93,30 @@ def init_db() -> None:
                 processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 status TEXT DEFAULT 'completed'
             )
-        """)
-        
+        """
+        )
+
         # Create index for faster playlist queries
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_playlist_id 
             ON processed_videos(playlist_id)
-        """)
-        
+        """
+        )
+
         conn.commit()
 
 
 def is_video_processed(video_id: str) -> bool:
     """
     Check if a video has already been processed.
-    
+
     Args:
         video_id: YouTube video ID
-        
+
     Returns:
         bool: True if video has been processed, False otherwise
-        
+
     TypeScript Equivalent:
         const isVideoProcessed = async (videoId: string): Promise<boolean> => {
             const result = await db.query(
@@ -124,10 +128,7 @@ def is_video_processed(video_id: str) -> bool:
     """
     with get_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT 1 FROM processed_videos WHERE video_id = ? LIMIT 1",
-            (video_id,)
-        )
+        cursor.execute("SELECT 1 FROM processed_videos WHERE video_id = ? LIMIT 1", (video_id,))
         return cursor.fetchone() is not None
 
 
@@ -143,7 +144,7 @@ def mark_video_processed(
 ) -> None:
     """
     Mark a video as processed and store its data.
-    
+
     Args:
         video_id: YouTube video ID
         playlist_id: YouTube playlist ID
@@ -153,7 +154,7 @@ def mark_video_processed(
         transcription: Full transcription text
         summary: Generated summary
         status: Processing status (completed, failed, etc.)
-        
+
     TypeScript Context:
         Similar to an INSERT OR REPLACE operation:
         await db.processedVideos.upsert({
@@ -162,35 +163,38 @@ def mark_video_processed(
     """
     with get_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT OR REPLACE INTO processed_videos 
             (video_id, playlist_id, title, channel, duration_seconds, 
              transcription, summary, processed_at, status)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            video_id,
-            playlist_id,
-            title,
-            channel,
-            duration_seconds,
-            transcription,
-            summary,
-            datetime.now().isoformat(),
-            status,
-        ))
+        """,
+            (
+                video_id,
+                playlist_id,
+                title,
+                channel,
+                duration_seconds,
+                transcription,
+                summary,
+                datetime.now().isoformat(),
+                status,
+            ),
+        )
         conn.commit()
 
 
 def get_processed_video(video_id: str) -> Optional[Dict[str, Any]]:
     """
     Get processed video data from the database.
-    
+
     Args:
         video_id: YouTube video ID
-        
+
     Returns:
         Optional[Dict[str, Any]]: Video data or None if not found
-        
+
     TypeScript Equivalent:
         const getProcessedVideo = async (
             videoId: string
@@ -200,10 +204,7 @@ def get_processed_video(video_id: str) -> Optional[Dict[str, Any]]:
     """
     with get_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT * FROM processed_videos WHERE video_id = ?",
-            (video_id,)
-        )
+        cursor.execute("SELECT * FROM processed_videos WHERE video_id = ?", (video_id,))
         row = cursor.fetchone()
         if row:
             return dict(row)
@@ -213,13 +214,13 @@ def get_processed_video(video_id: str) -> Optional[Dict[str, Any]]:
 def get_playlist_videos(playlist_id: str) -> List[Dict[str, Any]]:
     """
     Get all processed videos for a specific playlist.
-    
+
     Args:
         playlist_id: YouTube playlist ID
-        
+
     Returns:
         List[Dict[str, Any]]: List of processed video records
-        
+
     TypeScript Equivalent:
         const getPlaylistVideos = async (
             playlistId: string
@@ -231,7 +232,7 @@ def get_playlist_videos(playlist_id: str) -> List[Dict[str, Any]]:
         cursor = conn.cursor()
         cursor.execute(
             "SELECT * FROM processed_videos WHERE playlist_id = ? ORDER BY processed_at DESC",
-            (playlist_id,)
+            (playlist_id,),
         )
         rows = cursor.fetchall()
         return [dict(row) for row in rows]
@@ -240,7 +241,7 @@ def get_playlist_videos(playlist_id: str) -> List[Dict[str, Any]]:
 def get_all_processed_videos() -> List[Dict[str, Any]]:
     """
     Get all processed videos across all playlists.
-    
+
     Returns:
         List[Dict[str, Any]]: List of all processed video records
     """
@@ -254,12 +255,12 @@ def get_all_processed_videos() -> List[Dict[str, Any]]:
 def delete_video_record(video_id: str) -> bool:
     """
     Delete a video record from the database.
-    
+
     Useful for reprocessing a video or cleaning up failed attempts.
-    
+
     Args:
         video_id: YouTube video ID
-        
+
     Returns:
         bool: True if a record was deleted, False otherwise
     """

@@ -9,7 +9,7 @@ from yt_transcribe import prompt_templates
 async def test_ollama_summarizer_init():
     """Test Ollama summarizer initialization."""
     sum_service = summarizer.OllamaSummarizer()
-    
+
     assert sum_service.base_url == "http://localhost:11434"
     assert sum_service.model == "llama2"
 
@@ -21,7 +21,7 @@ async def test_ollama_summarizer_custom_config():
         base_url="http://custom:8080",
         model="mistral",
     )
-    
+
     assert sum_service.base_url == "http://custom:8080"
     assert sum_service.model == "mistral"
 
@@ -30,9 +30,9 @@ async def test_ollama_summarizer_custom_config():
 async def test_check_connection_failure():
     """Test connection check when Ollama is not running."""
     sum_service = summarizer.OllamaSummarizer(base_url="http://localhost:99999")
-    
+
     is_connected = await sum_service.check_connection()
-    
+
     assert is_connected is False
 
 
@@ -40,7 +40,7 @@ async def test_check_connection_failure():
 async def test_list_models_failure():
     """Test listing models when Ollama is not running."""
     sum_service = summarizer.OllamaSummarizer(base_url="http://localhost:99999")
-    
+
     with pytest.raises(summarizer.SummarizationError):
         await sum_service.list_models()
 
@@ -48,7 +48,7 @@ async def test_list_models_failure():
 def test_create_summarizer():
     """Test creating a summarizer with factory function."""
     sum_service = summarizer.create_summarizer()
-    
+
     assert isinstance(sum_service, summarizer.OllamaSummarizer)
     assert sum_service.base_url == "http://localhost:11434"
 
@@ -59,7 +59,7 @@ def test_create_summarizer_custom():
         base_url="http://custom:8080",
         model="mistral",
     )
-    
+
     assert sum_service.base_url == "http://custom:8080"
     assert sum_service.model == "mistral"
 
@@ -72,7 +72,7 @@ def test_summary_result_dataclass():
         model="llama2",
         tokens_used=100,
     )
-    
+
     assert result.summary == "Test summary"
     assert result.raw_response == "Raw response"
     assert result.model == "llama2"

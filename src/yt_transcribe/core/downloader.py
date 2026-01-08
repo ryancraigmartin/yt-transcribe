@@ -21,7 +21,7 @@ from dataclasses import dataclass
 class VideoInfo:
     """
     Video metadata information.
-    
+
     TypeScript Equivalent:
         interface VideoInfo {
             id: string;
@@ -30,11 +30,12 @@ class VideoInfo:
             duration: number;
             url: string;
         }
-        
+
     Python Note:
         @dataclass auto-generates __init__, __repr__, etc.
         Similar to TypeScript classes with public fields
     """
+
     id: str
     title: str
     channel: str
@@ -45,22 +46,23 @@ class VideoInfo:
 
 class DownloadError(Exception):
     """Raised when video download fails."""
+
     pass
 
 
 def get_playlist_videos(playlist_url: str) -> List[VideoInfo]:
     """
     Get list of videos in a playlist without downloading.
-    
+
     Args:
         playlist_url: YouTube playlist URL or ID
-        
+
     Returns:
         List[VideoInfo]: List of video metadata
-        
+
     Raises:
         DownloadError: If unable to fetch playlist info
-        
+
     TypeScript Context:
         Similar to calling an API:
         const getPlaylistVideos = async (url: string): Promise<VideoInfo[]> => {
@@ -71,14 +73,14 @@ def get_playlist_videos(playlist_url: str) -> List[VideoInfo]:
     # Convert playlist ID to URL if needed
     if not playlist_url.startswith("http"):
         playlist_url = f"https://www.youtube.com/playlist?list={playlist_url}"
-    
+
     try:
         # Use yt-dlp to get playlist info
         result = subprocess.run(
             [
                 "yt-dlp",
                 "--flat-playlist",  # Don't download, just get info
-                "--dump-json",       # Output JSON
+                "--dump-json",  # Output JSON
                 playlist_url,
             ],
             capture_output=True,
@@ -86,25 +88,27 @@ def get_playlist_videos(playlist_url: str) -> List[VideoInfo]:
             check=True,
             timeout=60,
         )
-        
+
         # Parse JSON output (one JSON object per line)
         videos = []
         for line in result.stdout.strip().split("\n"):
             if not line:
                 continue
-            
+
             data = json.loads(line)
-            videos.append(VideoInfo(
-                id=data["id"],
-                title=data.get("title", "Unknown"),
-                channel=data.get("channel", "Unknown"),
-                duration=data.get("duration", 0),
-                url=f"https://www.youtube.com/watch?v={data['id']}",
-                description=data.get("description"),
-            ))
-        
+            videos.append(
+                VideoInfo(
+                    id=data["id"],
+                    title=data.get("title", "Unknown"),
+                    channel=data.get("channel", "Unknown"),
+                    duration=data.get("duration", 0),
+                    url=f"https://www.youtube.com/watch?v={data['id']}",
+                    description=data.get("description"),
+                )
+            )
+
         return videos
-    
+
     except subprocess.CalledProcessError as e:
         raise DownloadError(f"Failed to fetch playlist info: {e.stderr}")
     except subprocess.TimeoutExpired:
@@ -116,20 +120,20 @@ def get_playlist_videos(playlist_url: str) -> List[VideoInfo]:
 def get_video_info(video_url: str) -> VideoInfo:
     """
     Get metadata for a single video.
-    
+
     Args:
         video_url: YouTube video URL or ID
-        
+
     Returns:
         VideoInfo: Video metadata
-        
+
     Raises:
         DownloadError: If unable to fetch video info
     """
     # Convert video ID to URL if needed
     if not video_url.startswith("http"):
         video_url = f"https://www.youtube.com/watch?v={video_url}"
-    
+
     try:
         result = subprocess.run(
             [
@@ -143,9 +147,9 @@ def get_video_info(video_url: str) -> VideoInfo:
             check=True,
             timeout=30,
         )
-        
+
         data = json.loads(result.stdout)
-        
+
         return VideoInfo(
             id=data["id"],
             title=data.get("title", "Unknown"),
@@ -154,7 +158,7 @@ def get_video_info(video_url: str) -> VideoInfo:
             url=f"https://www.youtube.com/watch?v={data['id']}",
             description=data.get("description"),
         )
-    
+
     except subprocess.CalledProcessError as e:
         raise DownloadError(f"Failed to fetch video info: {e.stderr}")
     except subprocess.TimeoutExpired:
@@ -166,17 +170,17 @@ def get_video_info(video_url: str) -> VideoInfo:
 def download_audio(video_url: str, output_dir: Path) -> Path:
     """
     Download audio from a YouTube video.
-    
+
     Args:
         video_url: YouTube video URL or ID
         output_dir: Directory to save audio file
-        
+
     Returns:
         Path: Path to downloaded audio file
-        
+
     Raises:
         DownloadError: If download fails
-        
+
     TypeScript Context:
         Similar to:
         const downloadAudio = async (url: string, dir: string): Promise<string> => {
@@ -190,23 +194,26 @@ def download_audio(video_url: str, output_dir: Path) -> Path:
     # Convert video ID to URL if needed
     if not video_url.startswith("http"):
         video_url = f"https://www.youtube.com/watch?v={video_url}"
-    
+
     # Ensure output directory exists
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Output template: video_id.ext
     output_template = str(output_dir / "%(id)s.%(ext)s")
-    
+
     try:
         # Download audio only, best quality
         subprocess.run(
             [
                 "yt-dlp",
-                "--extract-audio",           # Extract audio only
-                "--audio-format", "wav",      # Convert to WAV for transcription
-                "--audio-quality", "0",       # Best quality
-                "--output", output_template,
-                "--no-playlist",              # Single video only
+                "--extract-audio",  # Extract audio only
+                "--audio-format",
+                "wav",  # Convert to WAV for transcription
+                "--audio-quality",
+                "0",  # Best quality
+                "--output",
+                output_template,
+                "--no-playlist",  # Single video only
                 video_url,
             ],
             check=True,
@@ -214,16 +221,16 @@ def download_audio(video_url: str, output_dir: Path) -> Path:
             text=True,
             timeout=600,  # 10 minutes max
         )
-        
+
         # Get video ID to find the downloaded file
         info = get_video_info(video_url)
         audio_file = output_dir / f"{info.id}.wav"
-        
+
         if not audio_file.exists():
             raise DownloadError(f"Downloaded file not found: {audio_file}")
-        
+
         return audio_file
-    
+
     except subprocess.CalledProcessError as e:
         raise DownloadError(f"Failed to download audio: {e.stderr}")
     except subprocess.TimeoutExpired:
@@ -233,10 +240,10 @@ def download_audio(video_url: str, output_dir: Path) -> Path:
 def verify_ytdlp_installed() -> bool:
     """
     Verify that yt-dlp is installed and accessible.
-    
+
     Returns:
         bool: True if yt-dlp is available, False otherwise
-        
+
     TypeScript Context:
         Like checking if a binary exists:
         const verifyInstalled = (): boolean => {

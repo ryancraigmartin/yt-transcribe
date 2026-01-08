@@ -18,40 +18,41 @@ import time
 
 class TranscriptionError(Exception):
     """Raised when transcription fails."""
+
     pass
 
 
 class TranscriptionService(ABC):
     """
     Abstract base class for transcription services.
-    
+
     TypeScript Equivalent:
         abstract class TranscriptionService {
             abstract transcribe(audioPath: string): Promise<string>;
         }
     """
-    
+
     @abstractmethod
     def transcribe(self, audio_path: Path) -> str:
         """
         Transcribe audio file to text.
-        
+
         Args:
             audio_path: Path to audio file (WAV format)
-            
+
         Returns:
             str: Transcribed text with punctuation
-            
+
         Raises:
             TranscriptionError: If transcription fails
         """
         pass
-    
+
     @abstractmethod
     def is_available(self) -> bool:
         """
         Check if the transcription service is available.
-        
+
         Returns:
             bool: True if service is ready, False otherwise
         """
@@ -61,11 +62,11 @@ class TranscriptionService(ABC):
 class MockTranscriptionService(TranscriptionService):
     """
     Mock transcription service for testing and development.
-    
+
     Returns a placeholder transcription based on file duration.
     This allows the application to be developed and tested without
     the heavy NeMo dependency (~2GB).
-    
+
     TypeScript Context:
         Like a mock implementation for testing:
         class MockTranscriptionService implements TranscriptionService {
@@ -74,23 +75,23 @@ class MockTranscriptionService(TranscriptionService):
             }
         }
     """
-    
+
     def transcribe(self, audio_path: Path) -> str:
         """
         Generate mock transcription.
-        
+
         Args:
             audio_path: Path to audio file
-            
+
         Returns:
             str: Mock transcription text
         """
         if not audio_path.exists():
             raise TranscriptionError(f"Audio file not found: {audio_path}")
-        
+
         # Simulate some processing time (very fast compared to real transcription)
         time.sleep(0.5)
-        
+
         # Generate mock transcription
         return f"""This is a mock transcription for {audio_path.name}.
 
@@ -110,7 +111,7 @@ To enable real transcription:
 For development and testing purposes, this mock service allows the application 
 to be fully functional without the heavy ML dependencies.
 """
-    
+
     def is_available(self) -> bool:
         """Mock service is always available."""
         return True
@@ -119,23 +120,23 @@ to be fully functional without the heavy ML dependencies.
 class NeMoTranscriptionService(TranscriptionService):
     """
     Real transcription service using NVIDIA NeMo Parakeet TDT.
-    
+
     This is a placeholder for the actual NeMo integration.
     When implemented, it will:
     - Load the Parakeet TDT model
     - Process audio in chunks for efficiency
     - Return transcription with proper punctuation
-    
+
     Requirements:
     - nemo_toolkit package installed
     - CUDA-capable GPU (recommended)
     - Parakeet TDT model downloaded
     """
-    
+
     def __init__(self, model_path: Optional[Path] = None, device: str = "cuda"):
         """
         Initialize NeMo transcription service.
-        
+
         Args:
             model_path: Path to Parakeet model (or None to download)
             device: Device to use ('cuda' or 'cpu')
@@ -143,11 +144,11 @@ class NeMoTranscriptionService(TranscriptionService):
         self.model_path = model_path
         self.device = device
         self._model = None
-    
+
     def transcribe(self, audio_path: Path) -> str:
         """
         Transcribe audio using NeMo Parakeet TDT.
-        
+
         Implementation notes:
         - Load model if not already loaded
         - Process audio file
@@ -158,11 +159,12 @@ class NeMoTranscriptionService(TranscriptionService):
             "This requires nemo_toolkit installation and model download. "
             "Use MockTranscriptionService for development."
         )
-    
+
     def is_available(self) -> bool:
         """Check if NeMo is installed and model is available."""
         try:
             import nemo.collections.asr as nemo_asr
+
             return True
         except ImportError:
             return False
@@ -171,13 +173,13 @@ class NeMoTranscriptionService(TranscriptionService):
 def get_transcription_service(use_mock: bool = True) -> TranscriptionService:
     """
     Factory function to get appropriate transcription service.
-    
+
     Args:
         use_mock: If True, return mock service for testing
-        
+
     Returns:
         TranscriptionService: Configured transcription service
-        
+
     TypeScript Context:
         Factory pattern:
         const getTranscriptionService = (useMock: boolean): TranscriptionService => {

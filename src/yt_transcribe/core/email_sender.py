@@ -21,7 +21,7 @@ from dataclasses import dataclass
 class EmailConfig:
     """
     SMTP configuration.
-    
+
     TypeScript Equivalent:
         interface EmailConfig {
             server: string;
@@ -32,6 +32,7 @@ class EmailConfig:
             toAddress: string;
         }
     """
+
     server: str
     port: int
     username: str
@@ -42,6 +43,7 @@ class EmailConfig:
 
 class EmailError(Exception):
     """Raised when email sending fails."""
+
     pass
 
 
@@ -53,16 +55,16 @@ def send_summary_email(
 ) -> None:
     """
     Send a summary email via SMTP.
-    
+
     Args:
         config: SMTP configuration
         video_title: Title of the video
         summary: Markdown-formatted summary
         playlist_name: Optional playlist name
-        
+
     Raises:
         EmailError: If email sending fails
-        
+
     TypeScript Context:
         Similar to using nodemailer:
         const sendEmail = async (config: EmailConfig, subject: string, body: string) => {
@@ -83,29 +85,29 @@ def send_summary_email(
     subject = f"[YT-Transcribe] {video_title}"
     if playlist_name:
         subject = f"[YT-Transcribe: {playlist_name}] {video_title}"
-    
+
     # Create email message
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = config.from_address
     msg["To"] = config.to_address
-    
+
     # Add plain text version
     text_part = MIMEText(summary, "plain", "utf-8")
     msg.attach(text_part)
-    
+
     # Convert Markdown to HTML for better email display
     html_content = markdown_to_html(summary)
     html_part = MIMEText(html_content, "html", "utf-8")
     msg.attach(html_part)
-    
+
     # Send email
     try:
         with smtplib.SMTP(config.server, config.port, timeout=30) as server:
             server.starttls()  # Enable TLS encryption
             server.login(config.username, config.password)
             server.send_message(msg)
-    
+
     except smtplib.SMTPAuthenticationError:
         raise EmailError(
             "SMTP authentication failed. Check username/password. "
@@ -120,16 +122,16 @@ def send_summary_email(
 def markdown_to_html(markdown_text: str) -> str:
     """
     Convert Markdown to basic HTML for email display.
-    
+
     This is a simple converter for basic Markdown features.
     For production, consider using a library like markdown or mistune.
-    
+
     Args:
         markdown_text: Markdown-formatted text
-        
+
     Returns:
         str: HTML-formatted text
-        
+
     TypeScript Context:
         Similar to using marked or markdown-it:
         const markdownToHtml = (md: string): string => marked.parse(md)
@@ -182,12 +184,12 @@ def markdown_to_html(markdown_text: str) -> str:
     </head>
     <body>
 """
-    
+
     # Simple Markdown to HTML conversion
     # In production, use a proper Markdown library
     lines = markdown_text.split("\n")
     in_code_block = False
-    
+
     for line in lines:
         # Code blocks
         if line.strip().startswith("```"):
@@ -198,11 +200,11 @@ def markdown_to_html(markdown_text: str) -> str:
                 html += "<pre><code>"
                 in_code_block = True
             continue
-        
+
         if in_code_block:
             html += line + "\n"
             continue
-        
+
         # Headers
         if line.startswith("### "):
             html += f"<h3>{line[4:]}</h3>\n"
@@ -220,25 +222,25 @@ def markdown_to_html(markdown_text: str) -> str:
             html += f"<p>{line}</p>\n"
         else:
             html += "<br/>\n"
-    
+
     html += """
     </body>
     </html>
     """
-    
+
     return html
 
 
 def verify_smtp_config(config: EmailConfig) -> bool:
     """
     Verify SMTP configuration by attempting to connect.
-    
+
     Args:
         config: SMTP configuration to verify
-        
+
     Returns:
         bool: True if connection successful, False otherwise
-        
+
     TypeScript Context:
         Similar to testing a connection:
         const verifySmtpConfig = async (config: EmailConfig): Promise<boolean> => {
