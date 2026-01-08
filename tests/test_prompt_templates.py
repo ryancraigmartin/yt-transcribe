@@ -1,6 +1,7 @@
 """Tests for prompt templates module."""
 
 import pytest
+import tempfile
 from pathlib import Path
 from yt_transcribe import prompt_templates
 
@@ -133,8 +134,6 @@ def test_load_custom_template_not_found():
 
 def test_load_custom_template_invalid():
     """Test loading an invalid custom template."""
-    import tempfile
-
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         f.write("name: custom\n")  # Missing required fields
         f.flush()
