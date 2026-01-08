@@ -13,6 +13,8 @@ TypeScript Context:
 - Type hints help IDE autocomplete (like TypeScript interfaces)
 """
 
+from __future__ import annotations
+
 import os
 import yaml
 from pathlib import Path

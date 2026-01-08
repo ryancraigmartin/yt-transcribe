@@ -10,6 +10,8 @@ TypeScript Context:
 - Type hints for request/response similar to API client types
 """
 
+from __future__ import annotations
+
 import asyncio
 import aiohttp
 from typing import Dict, Any, Optional

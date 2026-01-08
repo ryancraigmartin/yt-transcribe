@@ -215,8 +215,13 @@ def markdown_to_html(markdown_text: str) -> str:
         # Lists
         elif line.strip().startswith("- ") or line.strip().startswith("* "):
             html += f"<li>{line.strip()[2:]}</li>\n"
-        elif line.strip().startswith(tuple(f"{i}. " for i in range(10))):
-            html += f"<li>{line.strip()[3:]}</li>\n"
+        elif line.strip() and line.strip()[0].isdigit() and ". " in line.strip()[:5]:
+            # Handle numbered lists (e.g., "1. ", "10. ", "100. ")
+            content = line.strip().split(". ", 1)
+            if len(content) > 1:
+                html += f"<li>{content[1]}</li>\n"
+            else:
+                html += f"<p>{line}</p>\n"
         # Paragraphs
         elif line.strip():
             html += f"<p>{line}</p>\n"
