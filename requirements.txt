@@ -1,0 +1,24 @@
+# Requirements for yt-transcribe
+# Note: NeMo toolkit and Parakeet models are large and should be installed separately
+# For now, we'll use a mock transcription service for development
+
+# Core CLI
+click>=8.1.7
+rich>=13.7.0
+
+# YouTube downloading
+yt-dlp>=2023.12.30
+
+# Configuration and data
+pyyaml>=6.0.1
+
+# HTTP clients for Ollama API
+requests>=2.31.0
+aiohttp>=3.9.1
+
+# Email
+secure-smtplib>=0.1.1
+
+# Note: For production use, install nemo_toolkit separately:
+# pip install nemo_toolkit['all']
+# This is a large package (~2GB) and requires CUDA for GPU acceleration

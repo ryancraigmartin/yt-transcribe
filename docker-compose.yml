@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  # Ollama service for local AI summarization
+  ollama:
+    image: ollama/ollama:latest
+    container_name: yt-transcribe-ollama
+    volumes:
+      - ollama-data:/root/.ollama
+    ports:
+      - "11434:11434"
+    restart: unless-stopped
+    # Uncomment for GPU support (requires nvidia-container-toolkit)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # yt-transcribe application
+  yt-transcribe:
+    build:
+      context: .
+      target: production
+    container_name: yt-transcribe-app
+    volumes:
+      # Mount config directory for persistence
+      - yt-transcribe-config:/home/ytuser/.yt-transcribe
+      # Mount for temporary audio files
+      - yt-transcribe-temp:/tmp/yt-transcribe-audio
+    environment:
+      # Point to Ollama service
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      - ollama
+    restart: unless-stopped
+    # Use host network to access Ollama easily
+    # Or use the service name 'ollama' in config
+    command: ["--help"]
+
+  # Development environment with tests
+  yt-transcribe-dev:
+    build:
+      context: .
+      target: development
+    container_name: yt-transcribe-dev
+    volumes:
+      # Mount source code for development
+      - .:/app
+      - yt-transcribe-config:/home/ytuser/.yt-transcribe
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      - ollama
+    command: ["sleep", "infinity"]
+    profiles:
+      - dev
+
+volumes:
+  ollama-data:
+    driver: local
+  yt-transcribe-config:
+    driver: local
+  yt-transcribe-temp:
+    driver: local
+
+# Usage:
+# 
+# Start services:
+#   docker-compose up -d
+#
+# Pull Ollama model (first time):
+#   docker-compose exec ollama ollama pull llama2
+#
+# Run yt-transcribe:
+#   docker-compose run --rm yt-transcribe init
+#   docker-compose run --rm yt-transcribe add --playlist <ID> --name <NAME> --prompt guitar
+#   docker-compose run --rm yt-transcribe run --all
+#
+# Development mode:
+#   docker-compose --profile dev up -d
+#   docker-compose exec yt-transcribe-dev bash
+#   pytest
