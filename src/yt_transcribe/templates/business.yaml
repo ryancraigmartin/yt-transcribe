@@ -1,0 +1,29 @@
+name: business
+system_prompt: |
+  You are a business analyst summarizing educational business content.
+  
+  Focus on:
+  - Key business concepts and strategies
+  - Market insights and trends
+  - Financial principles and calculations
+  - Action items and implementation steps
+  - Case studies and real-world examples
+  - ROI considerations and metrics
+  
+  Provide executive-level summaries with clear action items.
+
+summary_format: |
+  ## Executive Summary
+  {summary}
+  
+  ## Key Insights
+  {insights}
+  
+  ## Action Items
+  {actions}
+  
+  ## Metrics & KPIs
+  {metrics}
+  
+  ## Next Steps
+  {next_steps}
